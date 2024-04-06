@@ -3,6 +3,7 @@ package com.example.pawnder;
 import com.example.pawnder.engine.Board;
 import com.example.pawnder.engine.Move;
 import com.example.pawnder.engine.MultiAnalysis;
+import com.example.pawnder.engine.Square;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.image.Image;
@@ -15,6 +16,7 @@ import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Text;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
@@ -114,12 +116,17 @@ public class PawnderUIController {
     private Paint cLastPOne;
     private Paint cLastPTwo;
     private Paint hLastPOne;
+    private ArrayList<Square> legalSquares = new ArrayList<Square>();
 
     public void handleSquareClick(int id){
         if(prevClicked.isEmpty()){
             prevClicked = Optional.of(id);
             hLastPOne = rects.get(id).getFill();
             rects.get(id).setFill(Color.rgb(100, 255, 100));
+            List<Move> pieceMoves = internalBoard.pieceMoves(new Square(7-(int)(prevClicked.get()/8), prevClicked.get()%8));
+            for(Move move : pieceMoves){
+                legalSquares.add(move.toSquare);
+            }
         }
         else{
             if(hLastPOne != null){
@@ -127,41 +134,52 @@ public class PawnderUIController {
             }
             if(id == prevClicked.get()){
                 prevClicked = Optional.empty();
+                legalSquares = new ArrayList<Square>();
             }
             else{
-                if(cLastPOne != null){
-                    rects.get(cLastOne).setFill(cLastPOne);
-                    rects.get(cLastTwo).setFill(cLastPTwo);
+                boolean valid = false;
+                for(Square square : legalSquares){
+                    if(square.rank == 7-(int)(id/8) && square.file == id%8){
+                        valid = true;
+                        break;
+                    }
                 }
-                internalBoard.playMove(new Move(7-(int)(prevClicked.get()/8), prevClicked.get()%8, 7-(int)(id/8), id%8));
-                prevClicked = Optional.empty();
-                renderBoard(internalBoard);
-                status.setText("Waiting for computer...");
-                if(internalBoard.getAllMoves().isEmpty()){
-                    status.setText("You win!");
-                    return;
-                }
-                CompletableFuture.supplyAsync(() -> {
-                    return MultiAnalysis.bestMove(internalBoard.copyBoard(), 3).getMove();
-                }).thenAcceptAsync(bestMove -> {
-                    Platform.runLater(() -> {
-                        internalBoard.playMove(bestMove);
-                        cLastOne = 56-bestMove.fromSquare.rank*8+bestMove.fromSquare.file;
-                        cLastTwo = 56-bestMove.toSquare.rank*8+bestMove.toSquare.file;
-                        cLastPOne = rects.get(cLastOne).getFill();
-                        cLastPTwo = rects.get(cLastTwo).getFill();
-                        rects.get(cLastOne).setFill(Color.rgb(50, 150, 50));
-                        rects.get(cLastTwo).setFill(Color.rgb(100, 255, 100));
-                        renderBoard(internalBoard);
-                        if(internalBoard.getAllMoves().isEmpty()){
-                            status.setText("You lose.");
-                        }
-                        else{
-                            status.setText("Your turn.");
-                        }
+                if(valid){
+                    if(cLastPOne != null){
+                        rects.get(cLastOne).setFill(cLastPOne);
+                        rects.get(cLastTwo).setFill(cLastPTwo);
+                    }
+                    internalBoard.playMove(new Move(7-(int)(prevClicked.get()/8), prevClicked.get()%8, 7-(int)(id/8), id%8));
+                    prevClicked = Optional.empty();
+                    renderBoard(internalBoard);
+                    status.setText("Waiting for computer...");
+                    if(internalBoard.getAllMoves().isEmpty()){
+                        status.setText("You win!");
+                        return;
+                    }
+                    CompletableFuture.supplyAsync(() -> {
+                        return MultiAnalysis.bestMove(internalBoard.copyBoard(), 3).getMove();
+                    }).thenAcceptAsync(bestMove -> {
+                        Platform.runLater(() -> {
+                            internalBoard.playMove(bestMove);
+                            cLastOne = 56-bestMove.fromSquare.rank*8+bestMove.fromSquare.file;
+                            cLastTwo = 56-bestMove.toSquare.rank*8+bestMove.toSquare.file;
+                            cLastPOne = rects.get(cLastOne).getFill();
+                            cLastPTwo = rects.get(cLastTwo).getFill();
+                            rects.get(cLastOne).setFill(Color.rgb(50, 150, 50));
+                            rects.get(cLastTwo).setFill(Color.rgb(100, 255, 100));
+                            renderBoard(internalBoard);
+                            if(internalBoard.getAllMoves().isEmpty()){
+                                status.setText("You lose.");
+                            }
+                            else{
+                                status.setText("Your turn.");
+                            }
+                        });
                     });
-                });
+                }
             }
+            prevClicked = Optional.empty();
         }
     }
 }

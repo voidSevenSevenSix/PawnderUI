@@ -501,8 +501,6 @@ public class Board {
             case 'k':
                 return kingMoves(new Square(rank, file));
             default:
-                System.out.println("pieceMoves was called on an empty Square, aborting...");
-                assert false;
                 return new LinkedList<>();
         }
     }
