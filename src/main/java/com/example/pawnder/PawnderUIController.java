@@ -120,6 +120,9 @@ public class PawnderUIController {
 
     public void handleSquareClick(int id){
         if(prevClicked.isEmpty()){
+            if(internalBoard.colorOf(internalBoard.board[7-(int)(id/8)][id%8]) == Board.Color.BLACK){
+                return;
+            }
             prevClicked = Optional.of(id);
             hLastPOne = rects.get(id).getFill();
             rects.get(id).setFill(Color.rgb(100, 255, 100));

@@ -110,7 +110,7 @@ public class Board {
         return output;
     }
 
-    private Color colorOf(char p) {
+    public Color colorOf(char p) {
         if (p == '-') {
             return Color.EMPTY;
         } else if (p == 'R' || p == 'B' || p == 'N' || p == 'Q' || p == 'K' || p == 'P') {
